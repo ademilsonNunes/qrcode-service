@@ -1,30 +1,31 @@
 const express = require('express');
-const { exec } = require('child_process');
-
+const fs = require('fs');
 const app = express();
 const port = 5000;
 
-app.get('/capturar_qrcode', (req, res) => {
+let lastCode = '';
+
+app.get('/captura_qrcode', (req, res) => {
     const code = req.query.code;
     if (code) {
-        exec(`echo "${code}" | pbcopy`, (error, stdout, stderr) => {
-            if (error) {
-                console.error(`Erro ao copiar para a área de transferência: ${error.message}`);
-                res.send('Erro ao copiar para a área de transferência.');
-                return;
+        lastCode = code;
+        fs.writeFile('last_code.txt', code, (err) => {
+            if (err) {
+                console.error(`Erro ao escrever o último código: ${err}`);
+                res.send('Erro ao escrever o último código.');
+            } else {
+                console.log('Último código atualizado com sucesso:', code);
+                res.send('Conteúdo do QR Code capturado e armazenado com sucesso!');
             }
-            if (stderr) {
-                console.error(`Erro ao copiar para a área de transferência: ${stderr}`);
-                res.send('Erro ao copiar para a área de transferência.');
-                return;
-            }
-            console.log('Conteúdo do QR Code copiado para a área de transferência com sucesso!');
-            res.send('Conteúdo do QR Code copiado para a área de transferência com sucesso!');
         });
     } else {
         console.log('Nenhum conteúdo foi recebido.');
         res.send('Nenhum conteúdo foi recebido.');
     }
+});
+
+app.get('/ultimo_codigo', (req, res) => {
+    res.send(lastCode);
 });
 
 app.listen(port, () => {
